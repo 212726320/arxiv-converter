@@ -19,7 +19,7 @@ _input_re = re.compile("\\\\input\\{[0-9a-zA-Z\/\_]{1,}(\.tex)?\}")
 _graphics_re = re.compile("\\\\includegraphics" +
                           "(\[[0-9a-zA-Z,\s\-\=\.\\\\]{1,}\])?" +  # [width=stuff]
                           "\{[a-zA-Z0-9\/\_\.]{1,}" +  # Filename
-                          "[(\.eps)(\.pdf)]\}")
+                          "[(\.eps)(\.pdf)(\.png)]\}")
 _bibliography_re = re.compile("\\\\bibliography\{[a-zA-Z0-9\/\_\.]{1,}\}")
 _sty_re = re.compile("\\\\usepackage" +
                           "(\[[0-9a-zA-Z,\s\-\=\.\\\\]{1,}\])?" +  # [args,stuff]
@@ -219,7 +219,7 @@ def clean_figs(lines, pdfs_only):
     return lines, fig_name_new_list
 
 
-def epss_to_pdfs(dest_dir, fig_files):
+def figs_to_pdfs(dest_dir, fig_files):
     """
     Convert any non-pdfs to pdfs.
 
@@ -231,10 +231,23 @@ def epss_to_pdfs(dest_dir, fig_files):
     for i in range(len(fig_files)):
         f0 = fig_files[i]
         print("{} / {}".format(i + 1, len(fig_files)))
-        if not f0[-4:] == ".pdf":
-            call(["epstopdf", dest_dir + "/" + f0])
-            os.remove(dest_dir + "/" + f0)
-            fig_files[i] = f0[:-4] + ".pdf"
+        j = f0.rfind(".")
+        fig_type = f0[j:]
+        if fig_type == ".eps":
+            call(["epstopdf", os.path.join(dest_dir, f0)])
+            os.remove(os.path.join(dest_dir, f0))
+            fig_files[i] = f0[:j] + ".pdf"
+        elif fig_type == ".png":
+            f_new = f0[:j] + ".pdf"
+            call(["convert", os.path.join(dest_dir, f0), 
+                os.path.join(dest_dir, f_new)])
+            fig_files[i] = f_new
+        elif fig_type == ".pdf":
+            pass
+        else:
+            raise ValueError("Unrecognized figure type {} for file {}".format(
+                fig_type, f0))
+            
     return fig_files
 
 

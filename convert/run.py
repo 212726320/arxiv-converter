@@ -85,8 +85,8 @@ def run():
         shutil.copyfile(args.src_dir + "/" + fig_from,
                         args.dest_dir + "/" + fig_to)
 
-    # Convert eps'es to pdfs:
-    dest_fig_files = files.epss_to_pdfs(args.dest_dir, dest_fig_files)
+    # Convert figures to pdfs:
+    dest_fig_files = files.figs_to_pdfs(args.dest_dir, dest_fig_files)
 
     # Move the bib:
     n_bibs = len(src_files["bib"])
