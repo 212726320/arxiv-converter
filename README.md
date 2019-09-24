@@ -23,3 +23,11 @@ python main.py path/to/your/my-paper
 * Flatten all figures to "fig1.eps", etc
 * Take all eps figures and create a pdf version
 * Checks whether all files total to less than 10 MB
+
+### Notes
+**This is a version that uses `convert` to convert pngs to pdfs.** 
+However, this is usually disallowed by `convert` as a security measure. 
+In order to temporarily bypass this:
+* open `/etc/ImageMagick-6/policy.xml`
+* Change the line saying  `<policy domain="coder" rights="none" pattern="PDF" />` to ` <policy domain="coder" rights="read|write" pattern="PDF" />`
+* Be sure to change it back once you're done!
