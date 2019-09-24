@@ -6,6 +6,7 @@ from __future__ import absolute_import
 import os
 import re
 from subprocess import call
+import shutil
 
 
 # Regular expressions
@@ -281,3 +282,30 @@ def write_lines_to(lines, fname):
     with open(fname, "w") as f:
         f.write(s)
         return
+
+
+def cleanup(d, dont_remove=None, rm_sty_files=True):
+    """
+    Remove unneeded files
+
+    :param d: Directory to clean
+    :param dont_remove: List fo figure names.  Don't delete these!
+    :param rm_sty_files: if False, don't delete .sty files (we might need these)
+    """
+
+    dont_remove = [] if dont_remove is None else dont_remove
+    print("Clean up directory {}".format(d))
+    if rm_sty_files:
+        cleanup_files = [os.path.join(d, f) for f in os.listdir(d)
+            if not f in dont_remove]
+    else:
+        cleanup_files = [os.path.join(d, f) for f in os.listdir(d)
+            if not f in dont_remove and not f.endswith(".sty")]
+    
+    def rm_file_or_dir(x):
+        try:
+            os.remove(x)
+        except IsADirectoryError:
+            shutil.rmtree(x)
+    
+    [rm_file_or_dir(x) for x in cleanup_files]

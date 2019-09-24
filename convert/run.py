@@ -112,10 +112,8 @@ def run():
     files.write_lines_to(tex_lines, dest_file)
 
     # Remove unneeded files (i.e. from compilation...)
-    print("Clean up destination directory")
-    cleanup_files = [args.dest_dir + "/" + f for f in os.listdir(args.dest_dir)
-         if not f == main_file and not f in dest_fig_files]
-    [(lambda x: os.remove(x))(x) for x in cleanup_files]
+    files.cleanup(args.dest_dir, dont_remove=[main_file] + dest_fig_files,
+        rm_sty_files=False)
 
     # Ensure 10MB size requirement:
     doc_size_mb = sum(os.path.getsize(args.dest_dir + "/" + f)
