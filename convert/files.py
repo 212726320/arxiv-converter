@@ -13,7 +13,9 @@ import shutil
 # Comments:
 _comment_re = re.compile("^\s{0,}%")
 # for \input lines:
-_input_re = re.compile("\\\\input\\{[0-9a-zA-Z\/\_]{1,}(\.tex)?\}")
+# HACK would like to have these together...
+_input_tex_re = re.compile("\\\\input\\{[0-9a-zA-Z\/\_]{1,}(\.tex)?\}")
+_input_tikz_re = re.compile("\\\\input\\{[0-9a-zA-Z\/\_]{1,}(\.tikz)?\}")
 # For graphics:
 # Only support eps and pdf for now.  If you want other formats, then we also
 # need to be able to convert them to pdfs.
@@ -60,10 +62,11 @@ def line_is_comment(line):
 
 
 def get_input_file(line):
-    if not line_is_comment(line) and re.search(_input_re, line):
+    if not line_is_comment(line) and \
+            (re.search(_input_tex_re, line) or re.search(_input_tikz_re, line)):
         line = line.strip()
         new_file = line[7:-1]  # Assumes \input{file.tex}\n
-        if not new_file[-4:] == ".tex":
+        if not (new_file[-4:] == ".tex" or new_file[-5:] == ".tikz"):
             new_file += ".tex"
         return new_file
     else:
