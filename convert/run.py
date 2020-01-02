@@ -50,7 +50,7 @@ def run():
     os.makedirs(args.dest_dir)
 
     main_file = files.main_file(args.src_dir)
-    dest_file = args.dest_dir + "/" + main_file
+    dest_file = os.path.join(args.dest_dir, main_file)
     main_file_with_href = main_file[:-4] + "_with_href.tex"
     src_files = files.needed_files(args.src_dir, main_file)
 
@@ -75,8 +75,9 @@ def run():
     files.write_lines_to(tex_lines_with_href, args.dest_dir + "/" +
                            main_file_with_href)
 
-    # Move .sty files:
-    for f in src_files["sty"]:
+    # Move .sty, .cls, and .bst files:
+    for f in src_files["sty"] + src_files["cls"] + src_files["bst"]:
+        print("Copy from %s" % os.path.join(args.src_dir, f))
         shutil.copyfile(os.path.join(args.src_dir, f),
                         os.path.join(args.dest_dir, f))
 
@@ -113,8 +114,11 @@ def run():
 
     # Remove unneeded files (i.e. from compilation...)
     print("Clean up destination directory")
-    cleanup_files = [args.dest_dir + "/" + f for f in os.listdir(args.dest_dir)
-         if not f == main_file and not f in dest_fig_files]
+    cleanup_files = [
+        os.path.joing(args.dest_dir, f)
+        for f in os.listdir(args.dest_dir)
+        if not f == main_file and not f in dest_fig_files
+    ]
     [(lambda x: os.remove(x))(x) for x in cleanup_files]
 
     # Ensure 10MB size requirement:

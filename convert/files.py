@@ -16,10 +16,7 @@ _input_re = re.compile("\\\\input\\{[0-9a-zA-Z\/\_]{1,}(\.tex)?\}")
 # For graphics:
 # Only support eps and pdf for now.  If you want other formats, then we also
 # need to be able to convert them to pdfs.
-_graphics_re = re.compile("\\\\includegraphics" +
-                          "(\[[0-9a-zA-Z,\s\-\=\.\\\\]{1,}\])?" +  # [width=stuff]
-                          "\{[a-zA-Z0-9\/\_\.]{1,}" +  # Filename
-                          "[(\.eps)(\.pdf)]\}")
+
 _bibliography_re = re.compile("\\\\bibliography\{[a-zA-Z0-9\/\_\.]{1,}\}")
 _sty_re = re.compile("\\\\usepackage" +
                           "(\[[0-9a-zA-Z,\s\-\=\.\\\\]{1,}\])?" +  # [args,stuff]
@@ -58,6 +55,38 @@ def line_is_comment(line):
     return bool(re.search(_comment_re, line))
 
 
+def _get_class_files(line, d):
+        """
+        e.g.
+        \documentclass[subclass]{class}
+        requires new-aiaa.cls and new-aiaa.bst
+
+        :param line: The line to search
+        :param d: The directory the file is in.
+
+        :return: dict with "cls" and "bst" fields, each with either a full path 
+        to a file or `None`
+        """
+
+        _class_re = re.compile(
+            "\\\\documentclass" +  # \documentclass
+            "(\[[0-9a-zA-Z,\s\-\=\.\\\\]{1,}\])?" +  # [conf]
+            "\{[a-zA-Z0-9\/\_\-]{1,}" # {new-aiaa}
+        )
+        files = {}
+        if not line_is_comment(line) and re.search(_class_re, line):
+            s = re.search(_class_re, line).string
+            s = s.strip()
+            f = s[s.find("{") + 1: s.find("}")]
+            files = {}
+            for ending in ["bst", "cls"]:
+                file_with_ending = f + "." + ending
+                path = os.path.join(d, file_with_ending)
+                # path = d + "/" + f + "/." + ending
+                files[ending] = file_with_ending if os.path.isfile(path) else None
+        return files
+
+
 def get_input_file(line):
     if not line_is_comment(line) and re.search(_input_re, line):
         line = line.strip()
@@ -70,6 +99,13 @@ def get_input_file(line):
 
 
 def get_graphics_file(line):
+    _graphics_re = re.compile(
+        "\\\\includegraphics" +
+        "(\[[0-9a-zA-Z,\s\-\=\.\\\\]{1,}\])?" +  # [width=stuff]
+        "\{[a-zA-Z0-9\/\-\_\.]{1,}" +  # Filename
+        "[(\.eps)(\.pdf)]\}"
+    )
+
     if not line_is_comment(line) and re.search(_graphics_re, line):
         graphics_string = re.search(_graphics_re, line).string
         graphics_string = graphics_string.strip()
@@ -132,8 +168,8 @@ def needed_files(dir, current_file):
     :param current_file: the file to search through
     """
 
-    lines = read_file(dir + "/" + current_file)
-    file_set = {"figs": [], "bib": [], "sty": []}
+    lines = read_file(os.path.join(dir, current_file))
+    file_set = {"figs": [], "bib": [], "sty": [], "cls": [], "bst": []}
     for line in lines:
         # Search for \input calls and descend recursively
         inputted_file = get_input_file(line)
@@ -153,7 +189,11 @@ def needed_files(dir, current_file):
         sty_file = _get_sty_file(line, dir)
         if sty_file:
             file_set["sty"].append(sty_file)
-        
+        # .cls or .bst files?
+        for key, val in _get_class_files(line, dir).items():
+            if val is not None:
+                file_set[key].append(val)
+
     return file_set
 
 
